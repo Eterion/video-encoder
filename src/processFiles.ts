@@ -16,30 +16,27 @@ async function processFile(
     const outputFolder = path.join(path.dirname(file), '_encoded');
 
     const ffmpegParams: string[] = [
-      '-map 0:v',
-      encodeVideo ? ` -c:v libx264 -crf 23` : '-c:v copy',
+      `-c:v ${encodeVideo ? 'libx264 -crf 23' : 'copy'}`,
       '-c:a copy',
       '-c:s copy',
+      '-map 0:v',
     ];
     const audioTracks = filters.filter(isJapaneseAudioFilter);
-    const subtitleTracks = filters.filter(isEnglishSubtitleFilter);
-
     if (audioTracks.length > 0)
       audioTracks.forEach((track, index) => {
         ffmpegParams.push(`-map 0:a:${track.index}`);
-        if (!track.language || track.language !== 'jpn')
-          ffmpegParams.push(`-metadata:s:a:${track.index} language=jpn`);
-        if (index === 0)
-          ffmpegParams.push(`-disposition:a:${track.index} default`);
+        if (track.language !== 'jpn')
+          ffmpegParams.push(`-metadata:s:a:${index} language=jpn`);
+        if (index === 0) ffmpegParams.push(`-disposition:a:${index} default`);
       });
 
+    const subtitleTracks = filters.filter(isEnglishSubtitleFilter);
     if (subtitleTracks.length > 0)
       subtitleTracks.forEach((track, index) => {
         ffmpegParams.push(`-map 0:s:${track.index}`);
-        if (!track.language || track.language !== 'eng')
-          ffmpegParams.push(`-metadata:s:s:${track.index} language=eng`);
-        if (index === 0)
-          ffmpegParams.push(`-disposition:s:${track.index} default`);
+        if (track.language !== 'eng')
+          ffmpegParams.push(`-metadata:s:s:${index} language=eng`);
+        if (index === 0) ffmpegParams.push(`-disposition:s:${index} default`);
       });
 
     let ffmpegCommand = `ffmpeg -i "${file}" ${ffmpegParams.join(' ')}`;
