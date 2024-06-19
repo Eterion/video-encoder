@@ -1,29 +1,27 @@
 import fs from 'fs/promises';
-import inquirer from 'inquirer';
 import path from 'path';
+import prompts from 'prompts';
+import { handlePromptsOptions } from './utils/handlePromptsOptions';
 
 export async function scanForMediaFiles(directory: string): Promise<string[]> {
-  const files = (await fs.readdir(directory)).map((file) =>
-    path.join(directory, file)
-  );
-
+  const filesInDirectory = await fs.readdir(directory);
+  const files = filesInDirectory.map((file) => path.join(directory, file));
   const extensions = files.map((file) => path.extname(file).toLowerCase());
   const uniqueExtensions = Array.from(new Set(extensions)).filter(
     (ext) => ext !== ''
   );
 
-  const { selectedExtension } = await inquirer.prompt<{
-    selectedExtension: string;
-  }>([
+  const { selectedExtension } = await prompts(
     {
-      type: 'list',
+      type: 'select',
       name: 'selectedExtension',
       message: 'Select file extension to process',
-      choices: uniqueExtensions,
+      choices: uniqueExtensions.map((ext) => ({ title: ext, value: ext })),
     },
-  ]);
-
-  return files.filter(
-    (file) => path.extname(file).toLowerCase() === selectedExtension
+    handlePromptsOptions()
   );
+
+  return files.filter((file) => {
+    return path.extname(file).toLowerCase() === selectedExtension;
+  });
 }

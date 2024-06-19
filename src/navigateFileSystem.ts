@@ -1,67 +1,100 @@
 import chalk from 'chalk';
+import { exec } from 'child_process';
 import fs from 'fs/promises';
-import inquirer from 'inquirer';
 import { isNotJunk } from 'junk';
 import path from 'path';
-import { getPartitionDrives } from './getPartitionDrives';
+import prompts, { type Choice } from 'prompts';
+import { handlePromptsOptions } from './utils/handlePromptsOptions';
+
+async function partitionDrives(): Promise<string[]> {
+  return new Promise<string[]>((resolve, reject) => {
+    exec('wmic logicaldisk get caption', (err, stdout, stderr) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+
+      if (stderr) {
+        reject(new Error(stderr));
+        return;
+      }
+
+      // Split stdout into lines and filter out non-drive lines
+      const lines = stdout.trim().split(/\s+/);
+      const drives = lines.filter((line) => /^[A-Za-z]:$/.test(line));
+      resolve(drives);
+    });
+  });
+}
 
 export async function navigateFileSystem(): Promise<string> {
-  const drives = await getPartitionDrives();
-
-  const { selectedDrive } = await inquirer.prompt<{ selectedDrive: string }>({
-    type: 'list',
-    name: 'selectedDrive',
-    message: 'Select a drive:',
-    choices: drives,
-  });
-
-  let currentPath = selectedDrive + '\\';
-  const SELECT_DIR_VALUE = 'SELECT_CURRENT_DIRECTORY';
+  const drives = await partitionDrives();
+  let currentPath = '';
+  const SELECT_DIR_VALUE = Symbol();
 
   while (true) {
-    const files = (
-      await fs.readdir(currentPath, { withFileTypes: true })
-    ).filter((file) => isNotJunk(file.name));
+    if (!currentPath) {
+      const { selectedDrive } = await prompts(
+        {
+          type: 'select',
+          name: 'selectedDrive',
+          message: 'Select a drive',
+          choices: drives.map((drive) => ({ title: drive, value: drive })),
+        },
+        handlePromptsOptions()
+      );
 
-    const choices = [
+      currentPath = selectedDrive + '\\';
+    }
+
+    const files = await fs.readdir(currentPath, { withFileTypes: true });
+    const notJunkFiles = files.filter((file) => isNotJunk(file.name));
+
+    const directoryFileChoices: Choice[] = [
       {
-        name: '.. (Parent Directory)',
+        title: '.. (Parent Directory)',
         value: '..',
       },
       {
-        name: chalk.greenBright('Select Current Directory'),
+        title: chalk.greenBright('Select Current Directory'),
         value: SELECT_DIR_VALUE,
       },
-      ...files
+      ...notJunkFiles
         .filter((file) => file.isDirectory())
         .sort((a, b) => a.name.localeCompare(b.name))
         .map((file) => ({
-          name: '<' + file.name + '>',
+          title: '<' + file.name + '>',
           value: file.name,
         })),
-      ...files
+      ...notJunkFiles
         .filter((file) => file.isFile())
         .sort((a, b) => a.name.localeCompare(b.name))
         .map((file) => ({
-          name: file.name,
+          title: file.name,
           value: file.name,
         })),
     ];
 
-    const { selectedFile } = await inquirer.prompt<{ selectedFile: string }>({
-      type: 'list',
-      name: 'selectedFile',
-      message: `Current Directory: ${currentPath}`,
-      choices,
-      pageSize: 20,
-    });
+    const { selectedDir } = await prompts(
+      {
+        type: 'select',
+        name: 'selectedDir',
+        message: `Select a directory (${currentPath})`,
+        choices: directoryFileChoices,
+      },
+      handlePromptsOptions()
+    );
 
-    if (selectedFile === '..') {
-      currentPath = path.dirname(currentPath);
-    } else if (selectedFile === SELECT_DIR_VALUE) {
+    if (selectedDir === '..') {
+      if (path.dirname(currentPath) === currentPath) {
+        currentPath = '';
+      } else {
+        currentPath = path.dirname(currentPath);
+      }
+    } else if (selectedDir === SELECT_DIR_VALUE) {
       return currentPath;
     } else {
-      const selectedPath = path.join(currentPath, selectedFile);
+      const selectedPath = path.join(currentPath, selectedDir);
       const stats = await fs.lstat(selectedPath);
       if (stats.isDirectory()) {
         currentPath = selectedPath;

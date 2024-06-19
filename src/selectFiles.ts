@@ -1,20 +1,21 @@
-import inquirer from 'inquirer';
 import path from 'path';
+import prompts from 'prompts';
+import { handlePromptsOptions } from './utils/handlePromptsOptions';
 
 export async function selectFiles(files: string[]): Promise<string[]> {
-  const { selectedFiles } = await inquirer.prompt<{ selectedFiles: string[] }>([
+  const { selectedFiles } = await prompts(
     {
-      type: 'checkbox',
+      type: 'multiselect',
       name: 'selectedFiles',
       message: 'Select files to process',
       choices: files.map((file) => ({
-        name: path.basename(file),
+        title: path.basename(file),
         value: file,
+        selected: true,
       })),
-      default: files,
-      pageSize: 20,
     },
-  ]);
+    handlePromptsOptions()
+  );
 
   return selectedFiles;
 }

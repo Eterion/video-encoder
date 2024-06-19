@@ -1,29 +1,50 @@
-import inquirer from 'inquirer';
+import chalk from 'chalk';
 import path from 'path';
+import prompts from 'prompts';
 import { analyzeTracks } from './analyzeTracks';
-import { printTrackFilters } from './printTrackFilters';
 import type { TrackFilter } from './types/TrackFilter';
+import { handlePromptsOptions } from './utils/handlePromptsOptions';
 
-async function changeTracks(
+function trackFilterTitle(filter: TrackFilter) {
+  const trackType = filter.type.charAt(0).toUpperCase() + filter.type.slice(1);
+  const language = filter.language ?? 'unknown';
+  return `${trackType} track ${filter.index}: ${language}${
+    filter.title ? ` - ${filter.title}` : ''
+  }`;
+}
+
+async function printTrackFilters(
+  file: string,
+  filters: TrackFilter[]
+): Promise<void> {
+  console.log(chalk.bold(`\nTracks for file: ${path.basename(file)}`));
+
+  filters.forEach((filter) => {
+    const actionType = filter.keep ? 'Keep' : 'Remove';
+    const trackColor = filter.keep ? chalk.greenBright : chalk.redBright;
+    console.log(trackColor(`  ${actionType} ${trackFilterTitle(filter)}`));
+  });
+}
+
+async function customizeTracks(
   file: string,
   trackFilters: TrackFilter[]
 ): Promise<TrackFilter[]> {
-  const { modifiedFilters } = await inquirer.prompt<{
-    modifiedFilters: number[];
-  }>([
+  const { modifiedFilters } = await prompts(
     {
-      type: 'checkbox',
+      type: 'multiselect',
       name: 'modifiedFilters',
-      message: `Modify tracks for ${path.basename(file)}`,
-      choices: trackFilters.map((filter, index) => ({
-        name: `${filter.type} - ${filter.language ?? 'unknown'} - ${
-          filter.title ?? 'no title'
-        } (keep: ${filter.keep})`,
-        value: index,
-        checked: filter.keep,
-      })),
+      message: `Customize tracks for ${path.basename(file)}`,
+      choices: trackFilters.map((filter, index) => {
+        return {
+          title: trackFilterTitle(filter),
+          value: index,
+          selected: filter.keep,
+        };
+      }),
     },
-  ]);
+    handlePromptsOptions()
+  );
 
   return trackFilters.map((filter, index) => ({
     ...filter,
@@ -39,31 +60,35 @@ export async function selectTracks(files: string[]) {
     }))
   );
 
-  let shouldModify = false;
+  let shouldCustomize = false;
 
   do {
     analyzedFiles.forEach(({ file, trackFilters }) => {
       printTrackFilters(file, trackFilters);
     });
 
-    const { modifyTracks } = await inquirer.prompt<{ modifyTracks: boolean }>({
-      type: 'confirm',
-      name: 'modifyTracks',
-      message: 'Do you want to modify the tracks to be kept?',
-      default: false,
-    });
+    const { modifyTracks } = await prompts(
+      {
+        type: 'toggle',
+        name: 'modifyTracks',
+        message: 'Do you want to modify the tracks to be kept?',
+        active: 'Yes',
+        inactive: 'No',
+      },
+      handlePromptsOptions()
+    );
 
-    shouldModify = modifyTracks;
+    shouldCustomize = modifyTracks;
 
-    if (shouldModify) {
+    if (shouldCustomize) {
       for (const { file, trackFilters } of analyzedFiles) {
-        const modifiedFilters = await changeTracks(file, trackFilters);
+        const customTracks = await customizeTracks(file, trackFilters);
         analyzedFiles.find(
           (analyzedFile) => analyzedFile.file === file
-        )!.trackFilters = modifiedFilters;
+        )!.trackFilters = customTracks;
       }
     }
-  } while (shouldModify);
+  } while (shouldCustomize);
 
   return analyzedFiles;
 }

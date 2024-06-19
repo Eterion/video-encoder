@@ -1,9 +1,10 @@
 import chalk from 'chalk';
 import { exec } from 'child_process';
 import fs from 'fs/promises';
-import inquirer from 'inquirer';
 import path from 'path';
+import prompts from 'prompts';
 import type { TrackFilter } from './types/TrackFilter';
+import { handlePromptsOptions } from './utils/handlePromptsOptions';
 import { isEnglishSubtitleFilter } from './utils/isEnglishSubtitleFilter';
 import { isJapaneseAudioFilter } from './utils/isJapaneseAudioFilter';
 
@@ -84,21 +85,27 @@ export async function processFiles(
     trackFilters: TrackFilter[];
   }[]
 ): Promise<void> {
-  const { encodeVideo } = await inquirer.prompt<{ encodeVideo: boolean }>([
+  const { encodeVideo } = await prompts(
     {
-      type: 'confirm',
+      type: 'toggle',
       name: 'encodeVideo',
       message: 'Encode video to H.264?',
-      default: false,
+      active: 'Yes',
+      inactive: 'No',
     },
-  ]);
+    handlePromptsOptions()
+  );
 
-  const { shouldProcess } = await inquirer.prompt<{ shouldProcess: boolean }>({
-    type: 'confirm',
-    name: 'shouldProcess',
-    message: 'Do you want to proceed with processing?',
-    default: false,
-  });
+  const { shouldProcess } = await prompts(
+    {
+      type: 'toggle',
+      name: 'shouldProcess',
+      message: 'Do you want to proceed with processing?',
+      active: 'Yes',
+      inactive: 'No',
+    },
+    handlePromptsOptions()
+  );
 
   if (!shouldProcess) {
     console.log(chalk.yellow('Processing aborted by user.'));
