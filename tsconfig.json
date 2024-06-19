@@ -1,0 +1,12 @@
+{
+  "include": ["src"],
+  "extends": "@tsconfig/node-lts/tsconfig.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "types": ["node"],
+    "verbatimModuleSyntax": true
+  }
+}
