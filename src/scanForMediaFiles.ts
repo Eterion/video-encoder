@@ -4,12 +4,10 @@ import prompts from 'prompts';
 import { handlePromptsOptions } from './utils/handlePromptsOptions';
 
 export async function scanForMediaFiles(directory: string): Promise<string[]> {
-  const filesInDirectory = await fs.readdir(directory);
-  const files = filesInDirectory.map((file) => path.join(directory, file));
+  const fileNames = await fs.readdir(directory);
+  const files = fileNames.map((file) => path.join(directory, file));
   const extensions = files.map((file) => path.extname(file).toLowerCase());
-  const uniqueExtensions = Array.from(new Set(extensions)).filter(
-    (ext) => ext !== ''
-  );
+  const uniqueExtensions = [...new Set(extensions)].filter((ext) => ext);
 
   const { selectedExtension } = await prompts(
     {

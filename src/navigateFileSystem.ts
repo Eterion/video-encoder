@@ -48,7 +48,9 @@ export async function navigateFileSystem(): Promise<string> {
     }
 
     const files = await fs.readdir(currentPath, { withFileTypes: true });
-    const notJunkFiles = files.filter((file) => isNotJunk(file.name));
+    const notJunkFiles = files
+      .filter((file) => isNotJunk(file.name))
+      .sort((a, b) => a.name.localeCompare(b.name));
 
     const directoryFileChoices: Choice[] = [
       {
@@ -61,14 +63,12 @@ export async function navigateFileSystem(): Promise<string> {
       },
       ...notJunkFiles
         .filter((file) => file.isDirectory())
-        .sort((a, b) => a.name.localeCompare(b.name))
         .map((file) => ({
           title: '<' + file.name + '>',
           value: file.name,
         })),
       ...notJunkFiles
         .filter((file) => file.isFile())
-        .sort((a, b) => a.name.localeCompare(b.name))
         .map((file) => ({
           title: file.name,
           value: file.name,
