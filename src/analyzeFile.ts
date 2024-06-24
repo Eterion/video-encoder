@@ -1,5 +1,8 @@
 import { exec } from 'child_process';
+import { promisify } from 'util';
 import type { StreamInfo } from './types/StreamInfo';
+
+const execPromise = promisify(exec);
 
 interface RawStreamInfo {
   index: number;
@@ -11,50 +14,38 @@ interface RawStreamInfo {
 }
 
 export async function analyzeFile(file: string): Promise<StreamInfo[]> {
-  return new Promise((resolve, reject) => {
-    const ffprobeCommand = `ffprobe -v error -show_entries stream=index,codec_type:stream_tags=language,title -of json "${file}"`;
+  const ffprobeCommand = `ffprobe -v error -show_entries stream=index,codec_type:stream_tags=language,title -of json "${file}"`;
 
-    exec(ffprobeCommand, (error, stdout, stderr) => {
-      if (error) {
-        reject(`Error analyzing ${file}: ${error.message}`);
-        return;
-      }
-      if (stderr) {
-        reject(`ffprobe stderr analyzing ${file}: ${stderr}`);
-        return;
-      }
+  try {
+    const { stdout, stderr } = await execPromise(ffprobeCommand);
 
-      try {
-        const data = JSON.parse(stdout);
-        if (!data.streams || !Array.isArray(data.streams)) {
-          reject(`No valid streams found in ffprobe output for ${file}`);
-          return;
-        }
+    if (stderr) {
+      throw new Error(`ffprobe stderr analyzing ${file}: ${stderr}`);
+    }
 
-        const streams = (data.streams as RawStreamInfo[]).reduce<StreamInfo[]>(
-          (arr, stream) => {
-            const existingTracks = arr.filter(({ codecType }) => {
-              return codecType === stream.codec_type;
-            });
-            arr.push({
-              index: existingTracks.length,
-              codecType: stream.codec_type,
-              language: stream.tags?.language,
-              title: stream.tags?.title,
-            });
-            return arr;
-          },
-          []
-        );
+    const data = JSON.parse(stdout);
+    if (!data.streams || !Array.isArray(data.streams)) {
+      throw new Error(`No valid streams found in ffprobe output for ${file}`);
+    }
 
-        resolve(streams);
-      } catch (parseError: any) {
-        reject(
-          `Error parsing ffprobe output for ${file}: ${
-            (parseError as Error).message
-          }`
-        );
-      }
-    });
-  });
+    const streams = (data.streams as RawStreamInfo[]).reduce<StreamInfo[]>(
+      (arr, stream) => {
+        const existingTracks = arr.filter(({ codecType }) => {
+          return codecType === stream.codec_type;
+        });
+        arr.push({
+          index: existingTracks.length,
+          codecType: stream.codec_type,
+          language: stream.tags?.language,
+          title: stream.tags?.title,
+        });
+        return arr;
+      },
+      []
+    );
+
+    return streams;
+  } catch (error: any) {
+    throw new Error(`Error analyzing ${file}: ${error.message}`);
+  }
 }
