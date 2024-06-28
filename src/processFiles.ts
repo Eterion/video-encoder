@@ -17,11 +17,13 @@ async function processFile(
     const outputFolder = path.join(path.dirname(file), '_encoded');
 
     const ffmpegParams: string[] = [
-      `-c:v ${encodeVideo ? 'libx264 -crf 23' : 'copy'}`,
-      '-c:a copy',
-      '-c:s copy',
-      '-map 0:v',
+      `-c:v ${encodeVideo ? 'libx264 -crf 23' : 'copy'}`, // Set video codec: encode with H.264 if `encodeVideo` is true, otherwise copy the video stream
+      '-c:a copy', // Copy all audio streams without re-encoding
+      '-c:s copy', // Copy all subtitle streams without re-encoding
+      '-map 0:v', // Map all video streams from the input file
+      '-map_chapters 0', // Include chapters from the input file
     ];
+
     const audioTracks = filters.filter(isJapaneseAudioFilter);
     if (audioTracks.length > 0)
       audioTracks.forEach((track, index) => {
@@ -39,6 +41,9 @@ async function processFile(
           ffmpegParams.push(`-metadata:s:s:${index} language=eng`);
         if (index === 0) ffmpegParams.push(`-disposition:s:${index} default`);
       });
+
+    // Map and copy attachment streams
+    ffmpegParams.push('-map 0:t');
 
     let ffmpegCommand = `ffmpeg -i "${file}" ${ffmpegParams.join(' ')}`;
 
