@@ -1,4 +1,4 @@
-import { analyzeFile } from './analyzeFile';
+import { getStreamInfo } from './streams/getStreamInfo';
 import type { TrackFilter } from './types/TrackFilter';
 import { isAudioFilter } from './utils/isAudioFilter';
 import { isEnglishSubtitleFilter } from './utils/isEnglishSubtitleFilter';
@@ -6,14 +6,14 @@ import { isJapaneseAudioFilter } from './utils/isJapaneseAudioFilter';
 import { isSubtitleFilter } from './utils/isSubtitleFilter';
 
 export async function analyzeTracks(file: string): Promise<TrackFilter[]> {
-  const streams = await analyzeFile(file);
+  const streams = await getStreamInfo(file);
   const filters: TrackFilter[] = [];
 
   streams.forEach((stream) => {
     const language = stream.language?.toLowerCase();
     const title = stream.title?.toLowerCase();
 
-    if (stream.codecType === 'audio') {
+    if (stream.type === 'audio') {
       const isJapanese =
         language?.includes('ja') ||
         language?.includes('jpn') ||
@@ -28,7 +28,7 @@ export async function analyzeTracks(file: string): Promise<TrackFilter[]> {
         title: stream.title,
         keep: (isJapanese && notAudioCommentary) || false,
       });
-    } else if (stream.codecType === 'subtitle') {
+    } else if (stream.type === 'subtitle') {
       const isEnglish =
         language?.includes('en') ||
         language?.includes('eng') ||
