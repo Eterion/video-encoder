@@ -3,71 +3,77 @@ import { exec } from 'child_process';
 import fs from 'fs/promises';
 import path from 'path';
 import prompts from 'prompts';
+import type { AsyncReturnType } from 'type-fest';
 import type { TrackFilter } from './types/TrackFilter';
+import { getGPUVendor } from './utils/getGPUVendor';
 import { handlePromptsOptions } from './utils/handlePromptsOptions';
 import { isEnglishSubtitleFilter } from './utils/isEnglishSubtitleFilter';
 import { isJapaneseAudioFilter } from './utils/isJapaneseAudioFilter';
 
-type GPUOption = 'nvidia' | 'amd' | null;
-
 async function processFile(
   file: string,
   filters: TrackFilter[],
-  encodeVideo: string | null = null,
-  useGPU: GPUOption = null,
-  crfValue: number = 23
+  encodeVideo?: string,
+  useGPU?: AsyncReturnType<typeof getGPUVendor>
 ): Promise<void> {
   try {
     const outputFolder = path.join(path.dirname(file), '_encoded');
+    const ffmpegParams: string[] = [];
 
-    const ffmpegParams: string[] = [
-      '-c:a copy', // Copy all audio streams without re-encoding
-      '-c:s copy', // Copy all subtitle streams without re-encoding
-      '-map 0:v', // Map all video streams from the input file
-      '-map_chapters 0', // Include chapters from the input file
-    ];
-
+    ffmpegParams.push('-map 0:v');
     if (encodeVideo === 'h264') {
-      let videoCodec = '';
       switch (useGPU) {
         case 'nvidia':
-          videoCodec = 'h264_nvenc';
+          ffmpegParams.push(
+            '-c:v h264_nvenc -preset slow -rc vbr -cq 18 -b:v 2M -maxrate 5M -tune animation'
+          );
           break;
         case 'amd':
-          videoCodec = 'h264_amf';
+          ffmpegParams.push(
+            '-c:v h264_amf -quality slow -cq 18 -tune animation'
+          );
           break;
         default:
-          videoCodec = 'libx264';
+          ffmpegParams.push(
+            '-c:v libx264 -preset slow -crf 18 -tune animation -x264-params "aq-mode=3:aq-strength=0.8"'
+          );
           break;
       }
-      ffmpegParams.push(`-c:v ${videoCodec} -crf ${crfValue}`);
     } else if (encodeVideo === 'h265') {
-      let videoCodec = '';
       switch (useGPU) {
         case 'nvidia':
-          videoCodec = 'hevc_nvenc';
+          ffmpegParams.push(
+            '-c:v hevc_nvenc -preset slow -rc vbr -cq 18 -b:v 2M -maxrate 5M'
+          );
           break;
         case 'amd':
-          videoCodec = 'hevc_amf';
+          ffmpegParams.push('-c:v hevc_amf -quality slow -cq 18');
           break;
         default:
-          videoCodec = 'libx265';
+          ffmpegParams.push(
+            '-c:v libx265 -preset slow -crf 18 -x265-params "limit-sao:bframes=8:psy-rd=1.5:psy-rdoq=2:aq-mode=3"'
+          );
           break;
       }
-      ffmpegParams.push(`-c:v ${videoCodec} -crf ${crfValue}`);
     } else {
-      ffmpegParams.push('-c:v copy'); // No video encoding, just copy
+      ffmpegParams.push('-c:v copy'); // Copy video stream without encoding
     }
 
     const audioTracks = filters.filter(isJapaneseAudioFilter);
     if (audioTracks.length > 0)
       audioTracks.forEach((track, index) => {
         ffmpegParams.push(`-map 0:a:${track.index}`);
+        ffmpegParams.push(
+          track.codecName === 'flac'
+            ? `-c:a:${index} libopus -b:a:${index} 192k -vbr:${index} on -compression_level:${index} 10`
+            : `-c:a:${index} copy` // Copy audio stream without encoding
+        );
         if (track.language !== 'jpn')
           ffmpegParams.push(`-metadata:s:a:${index} language=jpn`);
         if (index === 0) ffmpegParams.push(`-disposition:a:${index} default`);
       });
 
+    ffmpegParams.push('-c:s copy'); // Copy subtitle streams without encoding
     const subtitleTracks = filters.filter(isEnglishSubtitleFilter);
     if (subtitleTracks.length > 0)
       subtitleTracks.forEach((track, index) => {
@@ -77,7 +83,10 @@ async function processFile(
         if (index === 0) ffmpegParams.push(`-disposition:s:${index} default`);
       });
 
-    // Map and copy attachment streams
+    // Include chapters
+    ffmpegParams.push('-map_chapters 0');
+
+    // Include attachments
     ffmpegParams.push('-map 0:t');
 
     let ffmpegCommand = `ffmpeg -i "${file}" ${ffmpegParams.join(' ')}`;
@@ -125,53 +134,38 @@ export async function processFiles(
     trackFilters: TrackFilter[];
   }[]
 ): Promise<void> {
-  const { encodeVideo, useGPU, crfValue, shouldProcess } = await prompts(
+  const { encodeVideo } = await prompts(
+    {
+      type: 'select',
+      name: 'encodeVideo',
+      message: 'Select video encoding option:',
+      choices: [
+        { title: 'No encoding', value: null },
+        { title: 'H.264 (AVC)', value: 'h264' },
+        { title: 'H.265 (HEVC)', value: 'h265' },
+      ],
+    },
+    handlePromptsOptions()
+  );
+
+  const gpuVendor = await getGPUVendor();
+  let useGPU: AsyncReturnType<typeof getGPUVendor>;
+  if (encodeVideo && gpuVendor) {
+    const { gpuEncoding } = await prompts(
+      {
+        type: 'toggle',
+        name: 'gpuEncoding',
+        message: `Use GPU (${gpuVendor}) for encoding?`,
+        active: 'Yes',
+        inactive: 'No',
+      },
+      handlePromptsOptions()
+    );
+    if (gpuEncoding) useGPU = gpuVendor;
+  }
+
+  const { shouldProcess } = await prompts(
     [
-      {
-        type: 'select',
-        name: 'encodeVideo',
-        message: 'Select video encoding option:',
-        choices: [
-          { title: 'No encoding', value: null },
-          { title: 'H.264 (AVC)', value: 'h264' },
-          { title: 'H.265 (HEVC)', value: 'h265' },
-        ],
-      },
-      {
-        type: (prev) => (prev ? 'select' : null),
-        name: 'useGPU',
-        message: 'Select GPU for encoding:',
-        choices: [
-          { title: 'None (CPU)', value: null },
-          { title: 'NVIDIA GPU', value: 'nvidia' },
-          { title: 'AMD GPU', value: 'amd' },
-        ],
-      },
-      {
-        type: (prev) => (prev ? 'select' : null),
-        name: 'crfValue',
-        message: 'Select CRF value (lower is higher quality):',
-        choices: (_prev, values) => {
-          if (values.encodeVideo === 'h264') {
-            return [
-              { title: '18 (High quality)', value: 18 },
-              { title: '20 (Good quality)', value: 20 },
-              { title: '23 (Default)', value: 23 },
-              { title: '28 (Lower quality, smaller size)', value: 28 },
-              { title: '30 (Low quality, smallest size)', value: 30 },
-            ];
-          } else if (values.encodeVideo === 'h265') {
-            return [
-              { title: '20 (High quality)', value: 20 },
-              { title: '23 (Good quality)', value: 23 },
-              { title: '28 (Default)', value: 28 },
-              { title: '30 (Lower quality, smaller size)', value: 30 },
-              { title: '35 (Low quality, smallest size)', value: 35 },
-            ];
-          }
-          return [];
-        },
-      },
       {
         type: 'toggle',
         name: 'shouldProcess',
@@ -189,6 +183,6 @@ export async function processFiles(
   }
 
   for (const { file, trackFilters } of selectedTracks) {
-    await processFile(file, trackFilters, encodeVideo, useGPU, crfValue);
+    await processFile(file, trackFilters, encodeVideo, useGPU);
   }
 }
