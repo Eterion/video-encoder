@@ -1,7 +1,7 @@
-import { navigateFileSystem } from './navigateFileSystem';
+import { navigateFileSystem } from './file-system/navigateFileSystem';
+import { scanForMediaFiles } from './file-system/scanForMediaFiles';
+import { selectFiles } from './file-system/selectFiles';
 import { processFiles } from './processFiles';
-import { scanForMediaFiles } from './scanForMediaFiles';
-import { selectFiles } from './selectFiles';
 import { selectTracks } from './tracks/selectTracks';
 
 async function main() {

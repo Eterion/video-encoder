@@ -1,6 +1,12 @@
 import fs from 'fs/promises';
 import path from 'path';
-import { askQuestion } from './utils/askQuestion';
+import { askQuestion } from '../utils/askQuestion';
+
+/**
+ * Scan a directory for media files by extension.
+ * @param directory - Directory path
+ * @returns Array of files
+ */
 
 export async function scanForMediaFiles(directory: string): Promise<string[]> {
   const fileNames = await fs.readdir(directory);

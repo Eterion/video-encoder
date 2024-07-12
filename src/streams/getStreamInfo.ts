@@ -1,9 +1,6 @@
-import { exec } from 'child_process';
-import { promisify } from 'util';
+import { execPromise } from '../utils/execPromise';
 import { getErrorMessage } from '../utils/getErrorMessage';
 import type { StreamInfo } from './StreamInfo';
-
-const execPromise = promisify(exec);
 
 interface OutStream {
   index: number;
