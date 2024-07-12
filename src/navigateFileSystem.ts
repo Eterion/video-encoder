@@ -3,8 +3,8 @@ import { exec } from 'child_process';
 import fs from 'fs/promises';
 import { isNotJunk } from 'junk';
 import path from 'path';
-import prompts, { type Choice } from 'prompts';
-import { handlePromptsOptions } from './utils/handlePromptsOptions';
+import { type Choice } from 'prompts';
+import { askQuestion } from './utils/askQuestion';
 
 async function partitionDrives(): Promise<string[]> {
   return new Promise<string[]>((resolve, reject) => {
@@ -34,15 +34,12 @@ export async function navigateFileSystem(): Promise<string> {
 
   while (true) {
     if (!currentPath) {
-      const { selectedDrive } = await prompts(
-        {
-          type: 'select',
-          name: 'selectedDrive',
-          message: 'Select a drive',
-          choices: drives.map((drive) => ({ title: drive, value: drive })),
-        },
-        handlePromptsOptions()
-      );
+      const { selectedDrive } = await askQuestion({
+        type: 'select',
+        name: 'selectedDrive',
+        message: 'Select a drive',
+        choices: drives.map((drive) => ({ title: drive, value: drive })),
+      });
 
       currentPath = selectedDrive + '\\';
     }
@@ -75,15 +72,12 @@ export async function navigateFileSystem(): Promise<string> {
         })),
     ];
 
-    const { selectedDir } = await prompts(
-      {
-        type: 'select',
-        name: 'selectedDir',
-        message: `Select a directory (${currentPath})`,
-        choices: directoryFileChoices,
-      },
-      handlePromptsOptions()
-    );
+    const { selectedDir } = await askQuestion({
+      type: 'select',
+      name: 'selectedDir',
+      message: `Select a directory (${currentPath})`,
+      choices: directoryFileChoices,
+    });
 
     if (selectedDir === '..') {
       if (path.dirname(currentPath) === currentPath) {

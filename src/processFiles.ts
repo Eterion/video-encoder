@@ -2,11 +2,10 @@ import chalk from 'chalk';
 import { exec } from 'child_process';
 import fs from 'fs/promises';
 import path from 'path';
-import prompts from 'prompts';
 import type { AsyncReturnType } from 'type-fest';
 import type { TrackFilter } from './types/TrackFilter';
+import { askQuestion } from './utils/askQuestion';
 import { getGPUVendor } from './utils/getGPUVendor';
-import { handlePromptsOptions } from './utils/handlePromptsOptions';
 import { isEnglishSubtitleFilter } from './utils/isEnglishSubtitleFilter';
 import { isJapaneseAudioFilter } from './utils/isJapaneseAudioFilter';
 
@@ -134,48 +133,39 @@ export async function processFiles(
     trackFilters: TrackFilter[];
   }[]
 ): Promise<void> {
-  const { encodeVideo } = await prompts(
-    {
-      type: 'select',
-      name: 'encodeVideo',
-      message: 'Select video encoding option:',
-      choices: [
-        { title: 'No encoding', value: null },
-        { title: 'H.264 (AVC)', value: 'h264' },
-        { title: 'H.265 (HEVC)', value: 'h265' },
-      ],
-    },
-    handlePromptsOptions()
-  );
+  const { encodeVideo } = await askQuestion({
+    type: 'select',
+    name: 'encodeVideo',
+    message: 'Select video encoding option:',
+    choices: [
+      { title: 'No encoding', value: null },
+      { title: 'H.264 (AVC)', value: 'h264' },
+      { title: 'H.265 (HEVC)', value: 'h265' },
+    ],
+  });
 
   const gpuVendor = await getGPUVendor();
   let useGPU: AsyncReturnType<typeof getGPUVendor>;
   if (encodeVideo && gpuVendor) {
-    const { gpuEncoding } = await prompts(
-      {
-        type: 'toggle',
-        name: 'gpuEncoding',
-        message: `Use GPU (${gpuVendor}) for encoding?`,
-        active: 'Yes',
-        inactive: 'No',
-      },
-      handlePromptsOptions()
-    );
+    const { gpuEncoding } = await askQuestion({
+      type: 'toggle',
+      name: 'gpuEncoding',
+      message: `Use GPU (${gpuVendor}) for encoding?`,
+      active: 'Yes',
+      inactive: 'No',
+    });
     if (gpuEncoding) useGPU = gpuVendor;
   }
 
-  const { shouldProcess } = await prompts(
-    [
-      {
-        type: 'toggle',
-        name: 'shouldProcess',
-        message: 'Do you want to proceed with processing?',
-        active: 'Yes',
-        inactive: 'No',
-      },
-    ],
-    handlePromptsOptions()
-  );
+  const { shouldProcess } = await askQuestion([
+    {
+      type: 'toggle',
+      name: 'shouldProcess',
+      message: 'Do you want to proceed with processing?',
+      active: 'Yes',
+      inactive: 'No',
+    },
+  ]);
 
   if (!shouldProcess) {
     console.log(chalk.yellow('Processing aborted by user.'));

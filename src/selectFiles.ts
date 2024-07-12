@@ -3,9 +3,8 @@ import { exec } from 'child_process';
 import { partial } from 'filesize';
 import fs from 'fs/promises';
 import path from 'path';
-import prompts from 'prompts';
 import { promisify } from 'util';
-import { handlePromptsOptions } from './utils/handlePromptsOptions';
+import { askQuestion } from './utils/askQuestion';
 
 const formatFileSize = partial({ standard: 'jedec' });
 const execPromise = promisify(exec);
@@ -86,15 +85,12 @@ export async function selectFiles(files: string[]): Promise<string[]> {
     })
   );
 
-  const { selectedFiles } = await prompts(
-    {
-      type: 'multiselect',
-      name: 'selectedFiles',
-      message: 'Select files to process',
-      choices,
-    },
-    handlePromptsOptions()
-  );
+  const { selectedFiles } = await askQuestion({
+    type: 'multiselect',
+    name: 'selectedFiles',
+    message: 'Select files to process',
+    choices,
+  });
 
   return selectedFiles;
 }

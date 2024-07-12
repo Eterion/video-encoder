@@ -1,9 +1,8 @@
 import chalk from 'chalk';
 import path from 'path';
-import prompts from 'prompts';
 import { analyzeTracks } from './analyzeTracks';
 import type { TrackFilter } from './types/TrackFilter';
-import { handlePromptsOptions } from './utils/handlePromptsOptions';
+import { askQuestion } from './utils/askQuestion';
 
 function trackFilterTitle(filter: TrackFilter) {
   const language = filter.language ?? 'unknown';
@@ -29,21 +28,18 @@ async function customizeTracks(
   file: string,
   trackFilters: TrackFilter[]
 ): Promise<TrackFilter[]> {
-  const { modifiedFilters } = await prompts(
-    {
-      type: 'multiselect',
-      name: 'modifiedFilters',
-      message: `Customize tracks for ${path.basename(file)}`,
-      choices: trackFilters.map((filter, index) => {
-        return {
-          title: trackFilterTitle(filter),
-          value: index,
-          selected: filter.keep,
-        };
-      }),
-    },
-    handlePromptsOptions()
-  );
+  const { modifiedFilters } = await askQuestion({
+    type: 'multiselect',
+    name: 'modifiedFilters',
+    message: `Customize tracks for ${path.basename(file)}`,
+    choices: trackFilters.map((filter, index) => {
+      return {
+        title: trackFilterTitle(filter),
+        value: index,
+        selected: filter.keep,
+      };
+    }),
+  });
 
   return trackFilters.map((filter, index) => ({
     ...filter,
@@ -66,16 +62,13 @@ export async function selectTracks(files: string[]) {
       printTrackFilters(file, trackFilters);
     });
 
-    const { modifyTracks } = await prompts(
-      {
-        type: 'toggle',
-        name: 'modifyTracks',
-        message: 'Do you want to modify the tracks to be kept?',
-        active: 'Yes',
-        inactive: 'No',
-      },
-      handlePromptsOptions()
-    );
+    const { modifyTracks } = await askQuestion({
+      type: 'toggle',
+      name: 'modifyTracks',
+      message: 'Do you want to modify the tracks to be kept?',
+      active: 'Yes',
+      inactive: 'No',
+    });
 
     shouldCustomize = modifyTracks;
 
