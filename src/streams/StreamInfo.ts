@@ -7,6 +7,6 @@ export interface StreamInfo {
   language?: string;
   /** Stream name. */
   title?: string;
-  /** Type of codec (audio, video, subtitle). */
-  type: string;
+  /** Type of stream (audio, video, subtitle). */
+  type: 'audio' | 'subtitle' | 'video';
 }

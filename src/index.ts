@@ -2,7 +2,7 @@ import { navigateFileSystem } from './navigateFileSystem';
 import { processFiles } from './processFiles';
 import { scanForMediaFiles } from './scanForMediaFiles';
 import { selectFiles } from './selectFiles';
-import { selectTracks } from './selectTracks';
+import { selectTracks } from './tracks/selectTracks';
 
 async function main() {
   const directory = await navigateFileSystem();

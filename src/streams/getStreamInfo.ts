@@ -7,7 +7,7 @@ const execPromise = promisify(exec);
 
 interface OutStream {
   index: number;
-  codec_type: string;
+  codec_type: StreamInfo['type'];
   codec_name?: string;
   tags?: {
     language?: string;

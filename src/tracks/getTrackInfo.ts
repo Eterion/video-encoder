@@ -1,13 +1,19 @@
-import { getStreamInfo } from './streams/getStreamInfo';
-import type { TrackFilter } from './types/TrackFilter';
-import { isAudioFilter } from './utils/isAudioFilter';
-import { isEnglishSubtitleFilter } from './utils/isEnglishSubtitleFilter';
-import { isJapaneseAudioFilter } from './utils/isJapaneseAudioFilter';
-import { isSubtitleFilter } from './utils/isSubtitleFilter';
+import { getStreamInfo } from '../streams/getStreamInfo';
+import { isAudioTrack } from './isAudioTrack';
+import { isEnglishSubtitleTrack } from './isEnglishSubtitleTrack';
+import { isJapaneseAudioTrack } from './isJapaneseAudioTrack';
+import { isSubtitleTrack } from './isSubtitleTrack';
+import type { TrackInfo } from './TrackInfo';
 
-export async function analyzeTracks(file: string): Promise<TrackFilter[]> {
+/**
+ * Extracts info about individual tracks of a media file.
+ * @param file  - File path
+ * @returns Array of tracks
+ */
+
+export async function getTrackInfo(file: string): Promise<TrackInfo[]> {
   const streams = await getStreamInfo(file);
-  const filters: TrackFilter[] = [];
+  const tracks: TrackInfo[] = [];
 
   streams.forEach((stream) => {
     const language = stream.language?.toLowerCase();
@@ -20,7 +26,7 @@ export async function analyzeTracks(file: string): Promise<TrackFilter[]> {
         language?.includes('japanese') ||
         title?.includes('japanese');
       const notAudioCommentary = !title?.includes('comment');
-      filters.push({
+      tracks.push({
         type: 'audio',
         codecName: stream.codecName,
         index: stream.index,
@@ -34,7 +40,7 @@ export async function analyzeTracks(file: string): Promise<TrackFilter[]> {
         language?.includes('eng') ||
         language?.includes('english') ||
         title?.includes('english');
-      filters.push({
+      tracks.push({
         type: 'subtitle',
         codecName: stream.codecName,
         index: stream.index,
@@ -45,23 +51,23 @@ export async function analyzeTracks(file: string): Promise<TrackFilter[]> {
     }
   });
 
-  // If no Japanese audio found, select the first available audio stream
-  const foundJapaneseAudio = filters.some(isJapaneseAudioFilter);
+  // If no Japanese audio found, keep the first available audio stream
+  const foundJapaneseAudio = tracks.some(isJapaneseAudioTrack);
   if (!foundJapaneseAudio) {
-    const firstAudio = filters.find(isAudioFilter);
+    const firstAudio = tracks.find(isAudioTrack);
     if (firstAudio) {
       firstAudio.keep = true;
     }
   }
 
-  // If no English subtitle found, select the first available subtitle stream
-  const foundEnglishSubtitle = filters.some(isEnglishSubtitleFilter);
+  // If no English subtitle found, keep the first available subtitle stream
+  const foundEnglishSubtitle = tracks.some(isEnglishSubtitleTrack);
   if (!foundEnglishSubtitle) {
-    const firstSubtitle = filters.find(isSubtitleFilter);
+    const firstSubtitle = tracks.find(isSubtitleTrack);
     if (firstSubtitle) {
       firstSubtitle.keep = true;
     }
   }
 
-  return filters;
+  return tracks;
 }

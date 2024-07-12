@@ -7,9 +7,9 @@ import prompts from 'prompts';
  * @returns Object of answers
  */
 
-export async function askQuestion(
-  questions: Parameters<typeof prompts>[0]
-): ReturnType<typeof prompts> {
+export async function askQuestion<T extends string = string>(
+  questions: prompts.PromptObject<T> | Array<prompts.PromptObject<T>>
+): Promise<prompts.Answers<T>> {
   return await prompts(questions, {
     onCancel: () => {
       console.log(chalk.yellow('Cancelled by user.'));

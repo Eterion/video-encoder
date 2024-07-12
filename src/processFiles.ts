@@ -3,15 +3,16 @@ import { exec } from 'child_process';
 import fs from 'fs/promises';
 import path from 'path';
 import type { AsyncReturnType } from 'type-fest';
-import type { TrackFilter } from './types/TrackFilter';
+import type { TrackInfo } from './tracks/TrackInfo';
+import { isEnglishSubtitleTrack } from './tracks/isEnglishSubtitleTrack';
+import { isJapaneseAudioTrack } from './tracks/isJapaneseAudioTrack';
+import type { selectTracks } from './tracks/selectTracks';
 import { askQuestion } from './utils/askQuestion';
 import { getGPUVendor } from './utils/getGPUVendor';
-import { isEnglishSubtitleFilter } from './utils/isEnglishSubtitleFilter';
-import { isJapaneseAudioFilter } from './utils/isJapaneseAudioFilter';
 
 async function processFile(
   file: string,
-  filters: TrackFilter[],
+  filters: TrackInfo[],
   encodeVideo?: string,
   useGPU?: AsyncReturnType<typeof getGPUVendor>
 ): Promise<void> {
@@ -58,7 +59,7 @@ async function processFile(
       ffmpegParams.push('-c:v copy'); // Copy video stream without encoding
     }
 
-    const audioTracks = filters.filter(isJapaneseAudioFilter);
+    const audioTracks = filters.filter(isJapaneseAudioTrack);
     if (audioTracks.length > 0)
       audioTracks.forEach((track, index) => {
         ffmpegParams.push(`-map 0:a:${track.index}`);
@@ -73,7 +74,7 @@ async function processFile(
       });
 
     ffmpegParams.push('-c:s copy'); // Copy subtitle streams without encoding
-    const subtitleTracks = filters.filter(isEnglishSubtitleFilter);
+    const subtitleTracks = filters.filter(isEnglishSubtitleTrack);
     if (subtitleTracks.length > 0)
       subtitleTracks.forEach((track, index) => {
         ffmpegParams.push(`-map 0:s:${track.index}`);
@@ -128,10 +129,7 @@ async function processFile(
 }
 
 export async function processFiles(
-  selectedTracks: {
-    file: string;
-    trackFilters: TrackFilter[];
-  }[]
+  selectedTracks: AsyncReturnType<typeof selectTracks>
 ): Promise<void> {
   const { encodeVideo } = await askQuestion({
     type: 'select',
@@ -172,7 +170,7 @@ export async function processFiles(
     return;
   }
 
-  for (const { file, trackFilters } of selectedTracks) {
+  for (const { file, tracks: trackFilters } of selectedTracks) {
     await processFile(file, trackFilters, encodeVideo, useGPU);
   }
 }
