@@ -22,6 +22,7 @@ export async function analyzeTracks(file: string): Promise<TrackFilter[]> {
       const notAudioCommentary = !title?.includes('comment');
       filters.push({
         type: 'audio',
+        codecName: stream.codecName,
         index: stream.index,
         language,
         title: stream.title,
@@ -35,6 +36,7 @@ export async function analyzeTracks(file: string): Promise<TrackFilter[]> {
         title?.includes('english');
       filters.push({
         type: 'subtitle',
+        codecName: stream.codecName,
         index: stream.index,
         language,
         title: stream.title,

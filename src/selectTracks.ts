@@ -6,11 +6,10 @@ import type { TrackFilter } from './types/TrackFilter';
 import { handlePromptsOptions } from './utils/handlePromptsOptions';
 
 function trackFilterTitle(filter: TrackFilter) {
-  const trackType = filter.type.charAt(0).toUpperCase() + filter.type.slice(1);
   const language = filter.language ?? 'unknown';
-  return `${trackType} track ${filter.index}: ${language}${
-    filter.title ? ` - ${filter.title}` : ''
-  }`;
+  return `${filter.type} (${filter.codecName}) track ${
+    filter.index
+  }: ${language}${filter.title ? ` - ${filter.title}` : ''}`;
 }
 
 async function printTrackFilters(

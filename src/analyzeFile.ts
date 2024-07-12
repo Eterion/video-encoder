@@ -7,6 +7,7 @@ const execPromise = promisify(exec);
 interface RawStreamInfo {
   index: number;
   codec_type: string;
+  codec_name?: string;
   tags?: {
     language?: string;
     title?: string;
@@ -14,7 +15,7 @@ interface RawStreamInfo {
 }
 
 export async function analyzeFile(file: string): Promise<StreamInfo[]> {
-  const ffprobeCommand = `ffprobe -v error -show_entries stream=index,codec_type:stream_tags=language,title -of json "${file}"`;
+  const ffprobeCommand = `ffprobe -v error -show_entries stream=index,codec_type,codec_name:stream_tags=language,title -of json "${file}"`;
 
   try {
     const { stdout, stderr } = await execPromise(ffprobeCommand);
@@ -36,6 +37,7 @@ export async function analyzeFile(file: string): Promise<StreamInfo[]> {
         arr.push({
           index: existingTracks.length,
           codecType: stream.codec_type,
+          codecName: stream.codec_name,
           language: stream.tags?.language,
           title: stream.tags?.title,
         });
