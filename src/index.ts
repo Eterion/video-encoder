@@ -1,7 +1,7 @@
 import { navigateFileSystem } from './file-system/navigateFileSystem';
 import { scanForMediaFiles } from './file-system/scanForMediaFiles';
 import { selectFiles } from './file-system/selectFiles';
-import { processFiles } from './processFiles';
+import { startProcessing } from './process/startProcessing';
 import { selectTracks } from './tracks/selectTracks';
 
 async function main() {
@@ -9,7 +9,7 @@ async function main() {
   const mediaFiles = await scanForMediaFiles(directory);
   const selectedFiles = await selectFiles(mediaFiles);
   const selectedTracks = await selectTracks(selectedFiles);
-  processFiles(selectedTracks);
+  startProcessing(selectedTracks);
 }
 
 main();
