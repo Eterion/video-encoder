@@ -22,7 +22,10 @@ export async function navigateFileSystem(): Promise<string> {
         type: 'select',
         name: 'selectedDrive',
         message: 'Select a drive',
-        choices: drives.map((drive) => ({ title: drive, value: drive })),
+        choices: drives.map((drive) => ({
+          title: `${drive.mount} ${drive.label}`,
+          value: drive.mount,
+        })),
       });
 
       currentPath = selectedDrive + '\\';
