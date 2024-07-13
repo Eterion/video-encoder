@@ -25,10 +25,10 @@ function getTrackName(trackInfo: TrackInfo) {
 
 async function logFileTracks(file: string, tracks: TrackInfo[]): Promise<void> {
   console.log(chalk.bold(`Tracks for file: ${path.basename(file)}`));
-  tracks.forEach((filter) => {
-    const actionType = filter.keep ? 'Keep' : 'Remove';
-    const trackColor = filter.keep ? chalk.greenBright : chalk.redBright;
-    console.log(trackColor(`  ${actionType} ${getTrackName(filter)}`));
+  tracks.forEach((track) => {
+    const actionType = track.keep ? 'Keep' : 'Remove';
+    const trackColor = track.keep ? chalk.greenBright : chalk.redBright;
+    console.log(trackColor(`  ${actionType} ${getTrackName(track)}`));
   });
 }
 
@@ -47,17 +47,17 @@ async function changeSelectedTracks(
     type: 'multiselect',
     name: 'changedTracks',
     message: `Select tracks for ${path.basename(file)}`,
-    choices: tracks.map((filter, index) => {
+    choices: tracks.map((track, index) => {
       return {
-        title: getTrackName(filter),
+        title: getTrackName(track),
         value: index,
-        selected: filter.keep,
+        selected: track.keep,
       };
     }),
   });
 
-  return tracks.map((filter, index) => ({
-    ...filter,
+  return tracks.map((track, index) => ({
+    ...track,
     keep: changedTracks.includes(index),
   }));
 }
