@@ -47,13 +47,12 @@ async function changeSelectedTracks(
     type: 'multiselect',
     name: 'changedTracks',
     message: `Select tracks for ${path.basename(file)}`,
-    choices: tracks.map((track, index) => {
-      return {
-        title: getTrackName(track),
-        value: index,
-        selected: track.keep,
-      };
-    }),
+    choices: tracks.map((track, index) => ({
+      disabled: track.type === 'video',
+      title: getTrackName(track),
+      value: index,
+      selected: track.keep,
+    })),
   });
 
   return tracks.map((track, index) => ({

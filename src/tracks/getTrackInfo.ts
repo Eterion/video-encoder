@@ -19,7 +19,13 @@ export async function getTrackInfo(file: string): Promise<TrackInfo[]> {
     const language = stream.language?.toLowerCase();
     const title = stream.title?.toLowerCase();
 
-    if (stream.type === 'audio') {
+    if (stream.type === 'video') {
+      tracks.push({
+        ...stream,
+        language,
+        keep: true,
+      });
+    } else if (stream.type === 'audio') {
       const isJapanese =
         language?.includes('ja') ||
         language?.includes('jpn') ||
