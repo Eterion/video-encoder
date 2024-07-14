@@ -18,19 +18,20 @@ export async function getStreamInfo(file: string) {
         reject(`No valid streams found in ffprobe output for ${file}`);
       // Map information
       resolve(
-        metadata.streams.map((stream, _index, arr) => {
-          const tracksOfSameType = arr.filter(({ codec_type }) => {
-            return codec_type === stream.codec_type;
+        metadata.streams.reduce<StreamInfo[]>((arr, stream) => {
+          const tracksOfSameType = arr.filter(({ type }) => {
+            return type === stream.codec_type;
           });
-          return {
+          arr.push({
             index: tracksOfSameType.length,
             codecName: stream.codec_name,
             language: stream.tags?.language,
             title: stream.tags?.title,
             type: stream.codec_type,
             metadata: stream,
-          };
-        })
+          });
+          return arr;
+        }, [])
       );
     });
   });
