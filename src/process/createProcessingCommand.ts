@@ -85,11 +85,11 @@ export function createProcessingCommand(
       if (index === 0) params.push(`-disposition:a:${index} default`);
     });
 
-  params.push('-c:s copy'); // Copy subtitle streams without encoding
   const subtitleTracks = tracks.filter(isEnglishSubtitleTrack);
   if (subtitleTracks.length > 0)
     subtitleTracks.forEach((track, index) => {
       params.push(`-map 0:s:${track.index}`);
+      params.push(`-c:s:${index} copy`); // Copy subtitle streams without encoding
       if (track.language !== 'eng')
         params.push(`-metadata:s:s:${index} language=eng`);
       if (index === 0) params.push(`-disposition:s:${index} default`);
