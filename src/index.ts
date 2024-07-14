@@ -5,9 +5,19 @@ import { startProcessing } from './process/startProcessing';
 import { selectTracks } from './tracks/selectTracks';
 
 async function main() {
-  const directory = await navigateFileSystem();
-  const mediaFiles = await scanForMediaFiles(directory);
-  const selectedFiles = await selectFiles(mediaFiles);
+  let selectedFiles: string[] = [];
+  const selectedFolderOrFile = await navigateFileSystem();
+
+  // Selection is a directory
+  if (typeof selectedFolderOrFile === 'string') {
+    const mediaFiles = await scanForMediaFiles(selectedFolderOrFile);
+    selectedFiles = await selectFiles(mediaFiles);
+  }
+  // Selection is a file
+  else {
+    selectedFiles = [selectedFolderOrFile.file];
+  }
+
   const selectedTracks = await selectTracks(selectedFiles);
   startProcessing(selectedTracks);
 }

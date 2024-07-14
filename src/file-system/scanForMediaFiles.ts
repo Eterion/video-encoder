@@ -14,14 +14,24 @@ export async function scanForMediaFiles(directory: string): Promise<string[]> {
   const extensions = files.map((file) => path.extname(file).toLowerCase());
   const uniqueExtensions = [...new Set(extensions)].filter((ext) => ext);
 
-  const { selectedExtension } = await askQuestion({
-    type: 'select',
-    name: 'selectedExtension',
-    message: 'Select file extension to process',
-    choices: uniqueExtensions.map((ext) => ({ title: ext, value: ext })),
-  });
+  let selectedExtensions;
+
+  if (uniqueExtensions.length === 1) {
+    selectedExtensions = uniqueExtensions;
+  } else {
+    const { extensions } = await askQuestion({
+      type: 'multiselect',
+      name: 'extensions',
+      message: 'Select file extensions to process',
+      choices: uniqueExtensions.map((ext) => ({
+        title: ext,
+        value: ext,
+      })),
+    });
+    selectedExtensions = extensions;
+  }
 
   return files.filter((file) => {
-    return path.extname(file).toLowerCase() === selectedExtension;
+    return selectedExtensions.includes(path.extname(file).toLowerCase());
   });
 }

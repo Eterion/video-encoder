@@ -7,14 +7,13 @@ import { askQuestion } from '../utils/askQuestion';
 import { getPartitionDrives } from './getPartitionDrives';
 
 /**
- * Navigate through file system to select a directory.
- * @returns Selected directory
+ * Navigate through file system to select a directory or a file.
+ * @returns Selected directory or file
  */
 
-export async function navigateFileSystem(): Promise<string> {
+export async function navigateFileSystem(): Promise<string | { file: string }> {
   const drives = await getPartitionDrives();
   let currentPath = '';
-  const SELECT_DIR_VALUE = Symbol();
 
   while (true) {
     if (!currentPath) {
@@ -36,14 +35,14 @@ export async function navigateFileSystem(): Promise<string> {
       .filter((file) => isNotJunk(file.name))
       .sort((a, b) => a.name.localeCompare(b.name));
 
-    const directoryFileChoices: Choice[] = [
+    const currentPathChoices: Choice[] = [
       {
         title: '.. (Parent Directory)',
         value: '..',
       },
       {
         title: chalk.greenBright('Select Current Directory'),
-        value: SELECT_DIR_VALUE,
+        value: '.',
       },
       ...notJunkFiles
         .filter((file) => file.isDirectory())
@@ -55,33 +54,37 @@ export async function navigateFileSystem(): Promise<string> {
         .filter((file) => file.isFile())
         .map((file) => ({
           title: file.name,
-          value: file.name,
+          value: { file: path.join(currentPath, file.name) },
         })),
     ];
 
-    const { selectedDir } = await askQuestion({
+    const { selectedFolderOrFile } = await askQuestion({
       type: 'select',
-      name: 'selectedDir',
-      message: `Select a directory (${currentPath})`,
-      choices: directoryFileChoices,
+      name: 'selectedFolderOrFile',
+      message: `Select a directory or file (${currentPath})`,
+      choices: currentPathChoices,
     });
 
-    if (selectedDir === '..') {
-      if (path.dirname(currentPath) === currentPath) {
-        currentPath = '';
-      } else {
-        currentPath = path.dirname(currentPath);
+    if (typeof selectedFolderOrFile === 'string') {
+      // Select parent directory
+      if (selectedFolderOrFile === '..') {
+        if (path.dirname(currentPath) === currentPath) {
+          currentPath = '';
+        } else {
+          currentPath = path.dirname(currentPath);
+        }
       }
-    } else if (selectedDir === SELECT_DIR_VALUE) {
-      return currentPath;
+      // Select current folder
+      else if (selectedFolderOrFile === '.') {
+        return currentPath;
+      }
+      // Navigate into the selected directory
+      else {
+        currentPath = path.join(currentPath, selectedFolderOrFile);
+      }
     } else {
-      const selectedPath = path.join(currentPath, selectedDir);
-      const stats = await fs.lstat(selectedPath);
-      if (stats.isDirectory()) {
-        currentPath = selectedPath;
-      } else {
-        console.log('Please select a directory.');
-      }
+      // Select a file
+      return selectedFolderOrFile;
     }
   }
 }
