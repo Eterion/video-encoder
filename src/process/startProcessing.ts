@@ -24,10 +24,10 @@ export async function startProcessing(
     ],
   });
 
-  const graphics = await getGraphicsInfo();
-  const gpuVendor = graphics?.vendor.toLowerCase();
   let useGPU: string | undefined;
-  if (encodeVideo && gpuVendor) {
+  if (encodeVideo) {
+    const graphics = await getGraphicsInfo();
+    const gpuVendor = graphics?.vendor.toLowerCase();
     const { gpuEncoding } = await askQuestion({
       type: 'toggle',
       name: 'gpuEncoding',
