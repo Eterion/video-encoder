@@ -4,7 +4,7 @@ import type { Choice } from 'prompts';
 import { askQuestion } from '../utils/askQuestion';
 import { formatFileSize } from '../utils/formatFileSize';
 import { formatVideoResolution } from '../utils/formatVideoResolution';
-import { getMediaFileInfo } from './getMediaFileInfo';
+import { getFileInfo } from './getFileInfo';
 
 /**
  * Select from array of files.
@@ -15,7 +15,7 @@ import { getMediaFileInfo } from './getMediaFileInfo';
 export async function selectFiles(files: string[]): Promise<string[]> {
   const choices = await Promise.all(
     files.map<Promise<Choice>>(async (file) => {
-      const { size, encoding, resolution } = await getMediaFileInfo(file);
+      const { size, encoding, resolution } = await getFileInfo(file);
       const formattedSize = size ? formatFileSize(size) : 'Unknown size';
       const formattedEncoding = encoding || 'Unknown encoding';
       const formattedResolution = resolution

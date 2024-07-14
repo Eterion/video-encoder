@@ -27,11 +27,8 @@ export async function getTrackInfo(file: string): Promise<TrackInfo[]> {
         title?.includes('japanese');
       const notAudioCommentary = !title?.includes('comment');
       tracks.push({
-        type: 'audio',
-        codecName: stream.codecName,
-        index: stream.index,
+        ...stream,
         language,
-        title: stream.title,
         keep: (isJapanese && notAudioCommentary) || false,
       });
     } else if (stream.type === 'subtitle') {
@@ -41,11 +38,8 @@ export async function getTrackInfo(file: string): Promise<TrackInfo[]> {
         language?.includes('english') ||
         title?.includes('english');
       tracks.push({
-        type: 'subtitle',
-        codecName: stream.codecName,
-        index: stream.index,
+        ...stream,
         language,
-        title: stream.title,
         keep: isEnglish || false,
       });
     }

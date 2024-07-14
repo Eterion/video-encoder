@@ -8,7 +8,7 @@ import { askQuestion } from '../utils/askQuestion';
  * @returns Array of files
  */
 
-export async function scanForMediaFiles(directory: string): Promise<string[]> {
+export async function scanForFiles(directory: string): Promise<string[]> {
   const fileNames = await fs.readdir(directory);
   const files = fileNames.map((file) => path.join(directory, file));
   const extensions = files.map((file) => path.extname(file).toLowerCase());

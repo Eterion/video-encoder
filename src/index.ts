@@ -1,5 +1,5 @@
 import { navigateFileSystem } from './file-system/navigateFileSystem';
-import { scanForMediaFiles } from './file-system/scanForMediaFiles';
+import { scanForFiles } from './file-system/scanForFiles';
 import { selectFiles } from './file-system/selectFiles';
 import { startProcessing } from './process/startProcessing';
 import { selectTracks } from './tracks/selectTracks';
@@ -10,8 +10,8 @@ async function main() {
 
   // Selection is a directory
   if (typeof selectedFolderOrFile === 'string') {
-    const mediaFiles = await scanForMediaFiles(selectedFolderOrFile);
-    selectedFiles = await selectFiles(mediaFiles);
+    const scannedFiles = await scanForFiles(selectedFolderOrFile);
+    selectedFiles = await selectFiles(scannedFiles);
   }
   // Selection is a file
   else {

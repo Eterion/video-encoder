@@ -1,3 +1,5 @@
+import type { FfprobeStream } from 'fluent-ffmpeg';
+
 export interface StreamInfo {
   /** Index number. */
   index: number;
@@ -5,8 +7,10 @@ export interface StreamInfo {
   codecName?: string;
   /** Stream language (eng, jpn). */
   language?: string;
+  /** Full stream metadata. */
+  metadata: FfprobeStream;
   /** Stream name. */
   title?: string;
   /** Type of stream (audio, video, subtitle). */
-  type: 'audio' | 'subtitle' | 'video';
+  type?: string;
 }
