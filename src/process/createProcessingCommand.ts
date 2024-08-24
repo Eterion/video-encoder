@@ -99,7 +99,7 @@ export function createProcessingCommand(
   params.push('-map_chapters 0');
 
   // Include attachments
-  params.push('-map 0:t');
+  params.push('-map 0:t?');
 
   const outputFileName = path.basename(file);
   const outputPath = path.join(outputFolder, outputFileName);
