@@ -40,6 +40,8 @@ export async function processFile(
     });
     await fs.mkdir(outputFolder, { recursive: true });
     const ffmpeg = exec(command);
+    console.log('Started processing:', chalk.greenBright(path.basename(file)));
+    console.log(chalk.gray(command));
 
     const totalFrames = getTotalFrames(tracks);
     const progressBar = (() => {
