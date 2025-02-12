@@ -15,6 +15,11 @@ export async function getTrackInfo(file: string): Promise<TrackInfo[]> {
   const streams = await getStreamInfo(file);
   const tracks: TrackInfo[] = [];
 
+  const subtitleStreamTitles = streams
+    .filter(({ type }) => type === 'subtitle')
+    .map(({ title }) => title?.toLowerCase())
+    .filter((title) => title !== undefined);
+
   streams.forEach((stream) => {
     const language = stream.language?.toLowerCase();
     const title = stream.title?.toLowerCase();
@@ -43,10 +48,18 @@ export async function getTrackInfo(file: string): Promise<TrackInfo[]> {
         language?.includes('eng') ||
         language?.includes('english') ||
         title?.includes('english');
+      const isPreferredSubs = (() => {
+        const preferredSubs = ['honorific', 'full', 'dialog'];
+        for (const keyword of preferredSubs) {
+          if (subtitleStreamTitles.some((value) => value.includes(keyword)))
+            return title?.includes(keyword);
+        }
+        return true;
+      })();
       tracks.push({
         ...stream,
         language,
-        keep: isEnglish || false,
+        keep: (isEnglish && isPreferredSubs) || false,
       });
     }
   });
