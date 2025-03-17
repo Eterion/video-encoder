@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import path from 'path';
+import path from 'node:path';
 import type { Choice } from 'prompts';
 import { askQuestion } from '../utils/askQuestion';
 import { formatFileSize } from '../utils/formatFileSize';

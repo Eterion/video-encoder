@@ -1,4 +1,4 @@
-import path from 'path';
+import path from 'node:path';
 import type { TrackInfo } from '../tracks/TrackInfo';
 import { isEnglishSubtitleTrack } from '../tracks/isEnglishSubtitleTrack';
 import { isJapaneseAudioTrack } from '../tracks/isJapaneseAudioTrack';

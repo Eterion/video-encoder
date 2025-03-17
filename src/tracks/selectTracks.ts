@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import path from 'path';
+import path from 'node:path';
 import { askQuestion } from '../utils/askQuestion';
 import { getTrackInfo } from './getTrackInfo';
 import type { TrackInfo } from './TrackInfo';

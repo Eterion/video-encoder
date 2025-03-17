@@ -1,8 +1,8 @@
 import chalk from 'chalk';
-import { exec } from 'child_process';
 import { SingleBar } from 'cli-progress';
-import fs from 'fs/promises';
-import path from 'path';
+import { exec } from 'node:child_process';
+import fs from 'node:fs/promises';
+import path from 'node:path';
 import type { TrackInfo } from '../tracks/TrackInfo';
 import { getErrorMessage } from '../utils/getErrorMessage';
 import { createProcessingCommand } from './createProcessingCommand';

@@ -1,7 +1,7 @@
 import chalk from 'chalk';
-import fs from 'fs/promises';
 import { isNotJunk } from 'junk';
-import path from 'path';
+import fs from 'node:fs/promises';
+import path from 'node:path';
 import type { Choice } from 'prompts';
 import { askQuestion } from '../utils/askQuestion';
 import { getPartitionDrives } from './getPartitionDrives';
